@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../database/model.dart';
 import '../database/database_helper.dart';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 // ignore: must_be_immutable
 class ProductListScreen extends StatefulWidget {
@@ -42,7 +41,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('จองคิวแม่บ้าน'),  // Changed title
+        title: const Text('จองคิวแม่บ้าน'), // Changed title
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: widget.dbHelper.getStream(),
@@ -52,19 +51,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
           }
           products.clear();
           for (var element in snapshot.data!.docs) {
-    var data = element.data() as Map<String, dynamic>;
-    products.add(Product(
-      name: element.get('name'),
-      description: element.get('description'),
-      favorite: element.get('favorite'),
-      referenceId: element.id,
-      contactnumber: data.containsKey('contactnumber') ? data['contactnumber'] : '',
-      address: data.containsKey('address') ? data['address'] : '',
-       // Default to null if not found
-      
-        // Default to empty string if not found
-    ));
-}
+            var data = element.data() as Map<String, dynamic>;
+            products.add(Product(
+              name: element.get('name'),
+              description: element.get('description'),
+              favorite: element.get('favorite'),
+              referenceId: element.id,
+              contactnumber: data.containsKey('contactnumber')
+                  ? data['contactnumber']
+                  : '',
+              address: data.containsKey('address') ? data['address'] : '',
+              bookingTime:
+                  data.containsKey('bookingTime') ? data['bookingTime'] : '',
+            ));
+          }
 
           return ListView.builder(
             itemCount: products.length,
@@ -84,7 +84,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 },
                 confirmDismiss: (direction) async {
                   if (direction == DismissDirection.endToStart) {
-                    return await _showConfirmDialog(context, 'แน่ใจว่าจะลบการจองนี้?');  // Changed confirmation message
+                    return await _showConfirmDialog(context,
+                        'แน่ใจว่าจะลบการจองนี้?'); // Changed confirmation message
                   }
                   return false;
                 },
@@ -144,33 +145,20 @@ class DetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var result = productdetail.favorite;
     return Scaffold(
       appBar: AppBar(
         title: Text(productdetail.name),
       ),
       body: SingleChildScrollView(
-        // Enclose content in SingleChildScrollView
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display uploaded image at the top if available
-            if (productdetail.imagePath != null)
-              Container(
-                height: 300, // Set a height for the image
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: FileImage(File(productdetail.imagePath!)), // Load the image from file path
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
             Container(
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(
                   left: 10, top: 20.0), // Adjust top padding as needed
               child: Text(
-                'เรื่องจอง: ${productdetail.name}',  // Updated label
+                'เรื่องจอง: ${productdetail.name}', // Updated label
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
@@ -179,7 +167,7 @@ class DetailScreen extends StatelessWidget {
               padding: const EdgeInsets.only(
                   left: 10, top: 20.0), // Adjust top padding as needed
               child: Text(
-                'รายละเอียด: ${productdetail.description}',  // Updated label
+                'รายละเอียด: ${productdetail.description}', // Updated label
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
@@ -188,27 +176,35 @@ class DetailScreen extends StatelessWidget {
               padding: const EdgeInsets.only(
                   left: 10, top: 20.0), // Adjust top padding as needed
               child: Text(
-                'ที่อยู่: ${productdetail.address}',  // Updated label
+                'ที่อยู่: ${productdetail.address}', // Updated label
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
-            
-           Container(
+            Container(
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(
                   left: 10, top: 20.0), // Adjust top padding as needed
               child: Text(
-                'เบอร์โทร: ${productdetail.contactnumber}',  // Updated label
+                'เบอร์โทร: ${productdetail.contactnumber}', // Updated label
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
-            
+            Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(
+                left: 10,
+                top: 20.0,
+              ),
+              child: Text(
+                'เวลาการจอง: ${productdetail.bookingTime}', // New label for booking time
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
             Container(
               padding: const EdgeInsets.only(top: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  
                   ElevatedButton(
                     child: const Text('Close'),
                     style: ElevatedButton.styleFrom(
@@ -236,30 +232,30 @@ class ModalProductForm {
   String _name = '', _description = '';
   String _address = '';
   String _contactnumber = '';
-  
- 
-
   final int _favorite = 0;
+  
+  DateTime? _selectedDate;
+  TimeOfDay? _selectedTime;
 
-  // Controllers for day, month, year, and time fields
-  final TextEditingController _dayController = TextEditingController();
-  final TextEditingController _monthController = TextEditingController();
-  final TextEditingController _yearController = TextEditingController();
-  final TextEditingController _timeController = TextEditingController();
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
+      _selectedDate = picked;
+    }
+  }
 
-  DateTime? _getSelectedDate() {
-    try {
-      int day = int.parse(_dayController.text);
-      int month = int.parse(_monthController.text);
-      int year = int.parse(_yearController.text);
-
-      List<String> timeParts = _timeController.text.split(':');
-      int hour = int.parse(timeParts[0]);
-      int minute = int.parse(timeParts[1]);
-
-      return DateTime(year, month, day, hour, minute);
-    } catch (e) {
-      return null;
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime ?? TimeOfDay.now(),
+    );
+    if (picked != null && picked != _selectedTime) {
+      _selectedTime = picked;
     }
   }
 
@@ -272,7 +268,7 @@ class ModalProductForm {
       isScrollControlled: true,
       builder: (BuildContext context) {
         return Container(
-          height: 900, // Set desired height
+          height: 700, // Set desired height
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -285,7 +281,7 @@ class ModalProductForm {
                 ),
                 title: const Center(
                   child: Text(
-                    'จองคิวแม่บ้าน',  // Changed title
+                    'จองคิวแม่บ้าน', // Changed title
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -295,116 +291,106 @@ class ModalProductForm {
                 ),
                 trailing: TextButton(
                   onPressed: () async {
-                    DateTime? selectedDate = _getSelectedDate();
-                    if (selectedDate == null) {
+                    if (_name.isEmpty || _description.isEmpty || _selectedDate == null || _selectedTime == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('กรุณากรอกข้อมูลวันที่และเวลาให้ถูกต้อง'),
+                          content: Text('กรุณากรอกข้อมูลให้ครบถ้วน'), // Error message
                         ),
                       );
-                      return;
-                    }
-
-                    if (_name.isEmpty || _description.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('กรุณากรอกข้อมูลให้ครบถ้วน'),
-                        ),
-                      );
-                      return;
-                    }
-
-                    await dbHelper.insertProduct(
-                      Product(
+                    } else {
+                      await dbHelper.insertProduct(Product(
                         name: _name,
                         description: _description,
                         favorite: _favorite,
                         contactnumber: _contactnumber,
                         address: _address,
-                        
-                        
-
-                        
-                        
-                      ),
-                    );
-                    Navigator.pop(context);
+                        bookingTime: '${DateFormat('dd/MM/yyyy').format(_selectedDate!)} ${_selectedTime!.format(context)}',
+                      ));
+                      Navigator.pop(context);
+                    }
                   },
-                  child: const Text('บันทึก'),
+                  child: const Text('บันทึก', style: TextStyle(color: Colors.orange)), // Save button
                 ),
-              ),
-              _buildInputField(
-                context,
-                'จองบริการ',  // Updated label
-                'กรุณากรอกหัวข้อการจอง',
-                (value) => _name = value,
-              ),
-              _buildInputField(
-                context,
-                'รายละเอียดการจอง',  // Updated label
-                'กรุณากรอกรายละเอียดการจอง',
-                (value) => _description = value,
-              ),
-              _buildInputField(
-                context,
-                'ที่อยู่',  // Updated label
-                'กรุณากรอกรายละเอียดที่อยู่',
-                (value) => _address = value,
-              ),
-              _buildInputField(
-                context,
-                'เบอร์โทร',  // Updated label
-                'กรุณากรอกเบอร์โทร',
-                (value) => _contactnumber = value,
               ),
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('เลือกวันและเวลา'),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _dayController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: 'วัน (เช่น 25)',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _monthController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: 'เดือน (เช่น 12)',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _yearController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: 'ปี (เช่น 2021)',
-                            ),
-                          ),
-                        ),
-                      ],
+                    const Text('กรอกข้อมูล'), // Input data title
+                    TextField(
+                      onChanged: (value) {
+                        _name = value;
+                      },
+                      decoration: const InputDecoration(
+                        hintText: 'ชื่อบริการ (เช่น ทำความสะอาด)',
+                      ),
                     ),
+                    TextField(
+                      onChanged: (value) {
+                        _description = value;
+                      },
+                      decoration: const InputDecoration(
+                        hintText: 'รายละเอียด (เช่น ทำความสะอาดบ้าน)',
+                      ),
+                    ),
+                    TextField(
+                      onChanged: (value) {
+                        _address = value;
+                      },
+                      decoration: const InputDecoration(
+                        hintText: 'ที่อยู่',
+                      ),
+                    ),
+                    TextField(
+                      onChanged: (value) {
+                        _contactnumber = value;
+                      },
+                      decoration: const InputDecoration(
+                        hintText: 'เบอร์โทรศัพท์',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text('เลือกวันและเวลา'), // Date and time selection title
                     const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
-                            controller: _timeController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: 'เวลา (เช่น 14:30)',
+                          child: GestureDetector(
+                            onTap: () => _selectDate(context),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _selectedDate == null
+                                      ? 'เลือกวันที่'
+                                      : DateFormat('dd/MM/yyyy').format(_selectedDate!),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _selectTime(context),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _selectedTime == null
+                                      ? 'เลือกเวลา'
+                                      : _selectedTime!.format(context),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -419,34 +405,15 @@ class ModalProductForm {
       },
     );
   }
-
-  Padding _buildInputField(BuildContext context, String labelText, String hintText, Function(String) onChanged) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: TextField(
-        decoration: InputDecoration(
-          labelText: labelText,
-          hintText: hintText,
-          border: OutlineInputBorder(),
-        ),
-        onChanged: onChanged,
-      ),
-    );
-  }
 }
 
 class ModalEditProductForm {
+  const ModalEditProductForm({Key? key, required this.dbHelper, required this.editedProduct});
+  
   final DatabaseHelper dbHelper;
   final Product editedProduct;
 
-  ModalEditProductForm({required this.dbHelper, required this.editedProduct});
-
   Future<dynamic> showModalInputForm(BuildContext context) {
-    final TextEditingController nameController =
-        TextEditingController(text: editedProduct.name);
-    final TextEditingController descriptionController =
-        TextEditingController(text: editedProduct.description);
-
     return showModalBottomSheet(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10.0),
@@ -455,7 +422,7 @@ class ModalEditProductForm {
       isScrollControlled: true,
       builder: (BuildContext context) {
         return Container(
-          height: 600, // Set desired height
+          height: 500, // Set desired height
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -468,7 +435,7 @@ class ModalEditProductForm {
                 ),
                 title: const Center(
                   child: Text(
-                    'แก้ไขข้อมูลการจอง',  // Updated title
+                    'แก้ไขข้อมูล', // Changed title
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -478,46 +445,58 @@ class ModalEditProductForm {
                 ),
                 trailing: TextButton(
                   onPressed: () async {
-                    final updatedProduct = Product(
-                      name: nameController.text,
-                      description: descriptionController.text,
-                      favorite: editedProduct.favorite,
-                      referenceId: editedProduct.referenceId,
-                      contactnumber: editedProduct.contactnumber,
-                      address: editedProduct.address,
-                      
-
-
-                      
-                      
-                      
-                    );
-                    await dbHelper.updateProduct(updatedProduct);
+                    await dbHelper.updateProduct(editedProduct);
                     Navigator.pop(context);
                   },
-                  child: const Text('บันทึก'),
+                  child: const Text('บันทึก', style: TextStyle(color: Colors.orange)), // Save button
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'หัวข้อการจอง',  // Updated label
-                    hintText: 'กรุณากรอกหัวข้อการจอง',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'รายละเอียดการจอง',  // Updated label
-                    hintText: 'กรุณากรอกรายละเอียดการจอง',
-                    border: OutlineInputBorder(),
-                  ),
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      onChanged: (value) {
+                        editedProduct.name = value;
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'ชื่อบริการ (เช่น ทำความสะอาด)',
+                        labelText: 'ชื่อบริการ',
+                        labelStyle: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                    TextField(
+                      onChanged: (value) {
+                        editedProduct.description = value;
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'รายละเอียด (เช่น ทำความสะอาดบ้าน)',
+                        labelText: 'รายละเอียด',
+                        labelStyle: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                    TextField(
+                      onChanged: (value) {
+                        editedProduct.address = value;
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'ที่อยู่',
+                        labelText: 'ที่อยู่',
+                        labelStyle: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                    TextField(
+                      onChanged: (value) {
+                        editedProduct.contactnumber = value;
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'เบอร์โทรศัพท์',
+                        labelText: 'เบอร์โทรศัพท์',
+                        labelStyle: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -529,25 +508,3 @@ class ModalEditProductForm {
 }
 
 
-
-class ServiceSelectionScreen extends StatelessWidget {
-  final List<String> services = ['ทำความสะอาดทั่วไป', 'ทำความสะอาดลึก', 'บริการเสริม'];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('เลือกบริการแม่บ้าน')),
-      body: ListView.builder(
-        itemCount: services.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(services[index]),
-            onTap: () {
-              // Logic to proceed with booking the selected service
-            },
-          );
-        },
-      ),
-    );
-  }
-}

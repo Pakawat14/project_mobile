@@ -8,6 +8,7 @@ class Product {
   String? referenceId;
   String? contactnumber;
   String? address;
+  String bookingTime; // Add a new field for booking time
   
   
    // Optional reference ID if needed
@@ -19,7 +20,7 @@ class Product {
     required this.favorite,
     required this.contactnumber,
     required this.address,
-      
+    required this.bookingTime,  
     this.referenceId,
     // Added bookingDate parameter
   });
@@ -32,6 +33,7 @@ class Product {
       favorite: json['favorite'] as int,
       contactnumber: json['contactnumber'] as String,
       address: json['address'] as String,
+      bookingTime: json['bookingTime'] as String,
       
       
       
@@ -48,6 +50,7 @@ class Product {
       'favorite': favorite,
       'contactnumber': contactnumber,
       'address': address,
+      'bookingTime': bookingTime,
       
       
       
