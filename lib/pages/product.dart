@@ -95,9 +95,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     subtitle: Text(
                         'รายละเอียด: ${products[index].description.toString()}'),
                     contentPadding: const EdgeInsets.all(50),
-                    trailing: products[index].favorite == 1
-                        ? const Icon(Icons.build, color: Colors.green)
-                        : null,
                     onTap: () async {
                       var result = await Navigator.push(
                         context,
@@ -233,7 +230,7 @@ class ModalProductForm {
   String _address = '';
   String _contactnumber = '';
   final int _favorite = 0;
-  
+
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
 
@@ -291,10 +288,14 @@ class ModalProductForm {
                 ),
                 trailing: TextButton(
                   onPressed: () async {
-                    if (_name.isEmpty || _description.isEmpty || _selectedDate == null || _selectedTime == null) {
+                    if (_name.isEmpty ||
+                        _description.isEmpty ||
+                        _selectedDate == null ||
+                        _selectedTime == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('กรุณากรอกข้อมูลให้ครบถ้วน'), // Error message
+                          content: Text(
+                              'กรุณากรอกข้อมูลให้ครบถ้วน'), // Error message
                         ),
                       );
                     } else {
@@ -304,12 +305,14 @@ class ModalProductForm {
                         favorite: _favorite,
                         contactnumber: _contactnumber,
                         address: _address,
-                        bookingTime: '${DateFormat('dd/MM/yyyy').format(_selectedDate!)} ${_selectedTime!.format(context)}',
+                        bookingTime:
+                            '${DateFormat('dd/MM/yyyy').format(_selectedDate!)} ${_selectedTime!.format(context)}',
                       ));
                       Navigator.pop(context);
                     }
                   },
-                  child: const Text('บันทึก', style: TextStyle(color: Colors.orange)), // Save button
+                  child: const Text('บันทึก',
+                      style: TextStyle(color: Colors.orange)), // Save button
                 ),
               ),
               Padding(
@@ -351,7 +354,8 @@ class ModalProductForm {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text('เลือกวันและเวลา'), // Date and time selection title
+                    const Text(
+                        'เลือกวันและเวลา'), // Date and time selection title
                     const SizedBox(height: 10),
                     Row(
                       children: [
@@ -368,7 +372,8 @@ class ModalProductForm {
                                 child: Text(
                                   _selectedDate == null
                                       ? 'เลือกวันที่'
-                                      : DateFormat('dd/MM/yyyy').format(_selectedDate!),
+                                      : DateFormat('dd/MM/yyyy')
+                                          .format(_selectedDate!),
                                 ),
                               ),
                             ),
@@ -408,8 +413,9 @@ class ModalProductForm {
 }
 
 class ModalEditProductForm {
-  const ModalEditProductForm({Key? key, required this.dbHelper, required this.editedProduct});
-  
+  const ModalEditProductForm(
+      {Key? key, required this.dbHelper, required this.editedProduct});
+
   final DatabaseHelper dbHelper;
   final Product editedProduct;
 
@@ -448,7 +454,8 @@ class ModalEditProductForm {
                     await dbHelper.updateProduct(editedProduct);
                     Navigator.pop(context);
                   },
-                  child: const Text('บันทึก', style: TextStyle(color: Colors.orange)), // Save button
+                  child: const Text('บันทึก',
+                      style: TextStyle(color: Colors.orange)), // Save button
                 ),
               ),
               Padding(
@@ -460,6 +467,7 @@ class ModalEditProductForm {
                       onChanged: (value) {
                         editedProduct.name = value;
                       },
+                      // ignore: prefer_const_constructors
                       decoration: InputDecoration(
                         hintText: 'ชื่อบริการ (เช่น ทำความสะอาด)',
                         labelText: 'ชื่อบริการ',
@@ -506,5 +514,3 @@ class ModalEditProductForm {
     );
   }
 }
-
-

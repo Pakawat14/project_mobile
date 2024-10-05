@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:test_cloundbase/pages/login.dart';
 // ignore: unused_import
 import 'pages/product.dart';
 // ignore: unused_import
 import 'database/model.dart';
-//
-// *** Edit #1 *** => import plug-in
-//
+// ignore: unused_import
 import 'package:firebase_core/firebase_core.dart';
 // ignore: unused_import
 import 'package:test_cloundbase/database/database_helper.dart';
-// ignore: unused_import
+// ignore: unused_import, duplicate_import
 import 'pages/login.dart';
 
 
@@ -47,6 +46,8 @@ class _MyAppState extends State<MyApp> {
       // *** Edit #3 *** => modify calling ProductScreen (add new parameter)
       //
       home: const LoginScreen()
+      
+      
     );
   }
 }
